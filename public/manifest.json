@@ -1,0 +1,22 @@
+{
+   "name": "1Kit Highlight Tool",
+   "description": "Allows users to highlight text across the internet.",
+   "version": "1.0",
+   "manifest_version": 3,
+   "permissions": [
+      "activeTab",
+      "tabs",
+      "scripting",
+      "notifications"
+   ],
+   "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "typescript": ["content.ts"]
+      }
+    ],
+    "background": {
+      "service_worker": "background.js"
+    }
+}

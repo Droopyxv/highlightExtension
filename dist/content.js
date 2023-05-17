@@ -1,0 +1,1 @@
+(()=>{"use strict";console.log("content.js init"),document.addEventListener("mouseup",(function(){const e=window.getSelection();if(e&&e.toString().length>0){const n=e.getRangeAt(0),t=document.createElement("span");t.style.backgroundColor="yellow",n.surroundContents(t),e.removeAllRanges()}}))})();
