@@ -6,24 +6,23 @@ function handleTextSelection() {
       selection.removeAllRanges();
     }
   }
-
-  console.log("i am called");
   
   function highlightSelectedText(range: Range) {
     const nodesToWrap: Node[] = [];
     const treeWalker = document.createTreeWalker(
       range.commonAncestorContainer,
-      NodeFilter.SHOW_TEXT,
-      null
+      NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT
     );
   
     while (treeWalker.nextNode()) {
-      const node = treeWalker.currentNode as Text;
-      const nodeRange = document.createRange();
-      nodeRange.selectNodeContents(node);
-      if (isRangeIntersecting(range, nodeRange)) {
+      const node = treeWalker.currentNode;
+      if (isNodeIntersectingRange(node, range)) {
         nodesToWrap.push(node);
       }
+    }
+  
+    if (nodesToWrap.length === 0 && range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+      nodesToWrap.push(range.commonAncestorContainer);
     }
   
     nodesToWrap.forEach((node) => {
@@ -31,15 +30,25 @@ function handleTextSelection() {
       span.style.backgroundColor = "yellow";
       const nodeRange = document.createRange();
       nodeRange.selectNodeContents(node);
-      nodeRange.surroundContents(span);
+      const intersectionRange = getIntersectionRange(nodeRange, range);
+      intersectionRange.surroundContents(span);
     });
   }
   
-  function isRangeIntersecting(range1: Range, range2: Range): boolean {
+  function isNodeIntersectingRange(node: Node, range: Range): boolean {
+    const nodeRange = document.createRange();
+    nodeRange.selectNodeContents(node);
     return (
-      range1.compareBoundaryPoints(Range.END_TO_START, range2) <= 0 &&
-      range1.compareBoundaryPoints(Range.START_TO_END, range2) >= 0
+      range.compareBoundaryPoints(Range.END_TO_START, nodeRange) <= 0 &&
+      range.compareBoundaryPoints(Range.START_TO_END, nodeRange) >= 0
     );
+  }
+  
+  function getIntersectionRange(range1: Range, range2: Range): Range {
+    const intersectionRange = range1.cloneRange();
+    intersectionRange.setStart(range2.startContainer, range2.startOffset);
+    intersectionRange.setEnd(range2.endContainer, range2.endOffset);
+    return intersectionRange;
   }
   
   document.addEventListener("mouseup", handleTextSelection);
