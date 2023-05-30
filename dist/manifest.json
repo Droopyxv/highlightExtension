@@ -7,7 +7,9 @@
       "activeTab",
       "tabs",
       "scripting",
-      "notifications"
+      "notifications",
+      "storage",
+      "nativeMessaging"
    ],
    "content_scripts": [
       {
@@ -18,8 +20,5 @@
     ],
     "background": {
       "service_worker": "background.js"
-    },
-    "action": {
-      "default_popup": "build/index.html"
-    }
+    }  
 }
