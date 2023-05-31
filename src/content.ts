@@ -1,115 +1,15 @@
+// Import the Rangee library and create a new instance
 import { Rangee } from 'rangee';
 
 const rangee = new Rangee({ document });
 
-// interface SerializedRange {
-//   startContainerPath: string | null;
-//   startOffset: number;
-//   endContainerPath: string | null;
-//   endOffset: number;
-// }
-
-interface Highlight {
-  url: string;
-  serializedRange: string;
-}
-
-// function serializeRange(range: Range): SerializedRange {
-//   const startPath = getXPath(range.startContainer) || '';
-//   const endPath = getXPath(range.endContainer) || '';
-//   return {
-//     startContainerPath: startPath,
-//     startOffset: range.startOffset,
-//     endContainerPath: endPath,
-//     endOffset: range.endOffset
-//   };
-// }
-
-// function serializeRange(range: Range): SerializedRange {
-//   const serializedRange: SerializedRange = {
-//     startContainerPath: getXPath(range.startContainer),
-//     startOffset: range.startOffset,
-//     endContainerPath: getXPath(range.endContainer),
-//     endOffset: range.endOffset
-//   };
-//   return serializedRange;
-// }
-
-// function deserializeRange(serializedRange: SerializedRange): Range | null {
-//   const startNode = getNodeByXPath(serializedRange.startContainerPath || '');
-//   const endNode = getNodeByXPath(serializedRange.endContainerPath || '');
-
-//   if (startNode && endNode) {
-//     const range = document.createRange();
-//     range.setStart(startNode, serializedRange.startOffset);
-//     range.setEnd(endNode, serializedRange.endOffset);
-//     return range;
-//   }
-
-//   return null;
-// }
-
-// function getXPath(node: Node): string | null {
-//   const parts: string[] = [];
-
-//   while (node && node !== document.documentElement) {
-//     let sibling = node;
-//     let index = 1;
-
-//     while (sibling && sibling.previousSibling) {
-//       sibling = sibling.previousSibling;
-//       if (sibling.nodeType === Node.ELEMENT_NODE) {
-//         index++;
-//       }
-//     }
-
-//     let tagName = node.nodeName.toLowerCase();
-//     if (node.nodeType === Node.ELEMENT_NODE) {
-//       parts.unshift(tagName + '[' + index + ']');
-//     } else if (node.nodeType === Node.TEXT_NODE) {
-//       parts.unshift(tagName + '[' + index + ']' + '/text()');
-//     }
-
-//     node = node.parentNode as Node;
-//   }
-
-//   return parts.length > 0 ? '/' + parts.join('/') : null;
-// }
-
-// function getXPath(node: Node): string | null {
-//   if (node instanceof Text) {
-//     const parent = node.parentNode;
-//     if (parent) {
-//       const siblings = Array.from(parent.childNodes);
-//       const index = siblings.findIndex((sibling) => sibling === node);
-//       return getXPath(parent) + `/text()[${index + 1}]`;
-//     }
-//   } else if (node instanceof Element) {
-//     const parent = node.parentNode;
-//     if (parent) {
-//       const siblings = Array.from(parent.childNodes);
-//       const index = siblings.findIndex((sibling) => sibling === node);
-//       return getXPath(parent) + `/*[${index + 1}]`;
-//     }
-//   }
-
-//   return null; // Return null for unsupported node types
-// }
+import {Highlight} from 'src/utils/interface.ts'
+//import highlights from interface file.
 
 
-// function getNodeByXPath(xpath: string): Node | null {
-//   try {
-//     const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-//     return result.singleNodeValue;
-//   } catch (error) {
-//     console.error('Invalid XPath:', xpath);
-//     return null;
-//   }
-// }
-
-
-
+// Function to handle a text selection
 function handleTextSelection() {
+    // Get the current text selection
   const selection = window.getSelection();
   if (selection && selection.toString().length > 0) {
     const range = selection.getRangeAt(0);
@@ -119,89 +19,26 @@ function handleTextSelection() {
     console.log("Website URL:", websiteUrl);
     console.log("Range selected: ", range);
 
+    // Serialize the selected range using Rangee
     const serRange = rangee.serializeAtomic(range);
 
+     // Create a new highlight object and send it to the background script
     const newHighlight: Highlight = {
       url: websiteUrl,
       serializedRange: serRange
     };
     chrome.runtime.sendMessage({ type: 'newHighlight', data: newHighlight });
 
+    // Highlight the selected text and remove the selection
     highlightSelectedText(range);
     selection.removeAllRanges();
   }
 }
 
 
-
-// function highlightSelectedText(startOffset: number, endOffset: number) {
-//   const selection = window.getSelection();
-//   if (selection && selection.rangeCount > 0) {
-//     const range = selection.getRangeAt(0);
-
-//     const highlightSpan = document.createElement("span");
-//     highlightSpan.style.backgroundColor = "yellow";
-
-//     const startContainer = range.startContainer;
-//     const endContainer = range.endContainer;
-
-//     if (startContainer === endContainer && startContainer.nodeType === Node.TEXT_NODE) {
-//       const textNode = startContainer as Text;
-//       const highlightedText = textNode.splitText(startOffset);
-//       highlightedText.splitText(endOffset - startOffset);
-
-//       const highlightedSpan = highlightSpan.cloneNode() as HTMLElement;
-//       highlightedSpan.appendChild(highlightedText.cloneNode(true));
-//       range.deleteContents();
-//       range.insertNode(highlightedSpan);
-//     } else {
-//       const walker = document.createTreeWalker(
-//         document.body,
-//         NodeFilter.SHOW_ELEMENT,
-//         {
-//           acceptNode(node: Node) {
-//             if (node.isEqualNode(startContainer) || node.contains(startContainer)) {
-//               return NodeFilter.FILTER_ACCEPT;
-//             }
-//             return NodeFilter.FILTER_SKIP;
-//           }
-//         }
-//       );
-
-//       let currentNode: Node | null = walker.nextNode();
-
-//       while (currentNode) {
-//         if (currentNode.nodeType === Node.TEXT_NODE) {
-//           const textNode = currentNode as Text;
-
-//           if (currentNode === startContainer) {
-//             range.setStart(textNode, startOffset);
-//           }
-
-//           if (currentNode === endContainer) {
-//             range.setEnd(textNode, endOffset);
-//             break;
-//           }
-
-//           const clonedRange = range.cloneRange();
-//           clonedRange.selectNodeContents(textNode);
-//           range.surroundContents(highlightSpan);
-//         }
-
-//         currentNode = walker.nextNode();
-//       }
-//     }
-
-//     selection.removeAllRanges();
-//     selection.addRange(range);
-//   }
-// }
-
-
-
-
-  
+  // Function to highlight selected text
 function highlightSelectedText(range: Range) {
+  // Find all text nodes that contain the selected range and wrap them in a <span> element with a yellow background
   const nodesToWrap: Node[] = [];
   const treeWalker = document.createTreeWalker(
     range.commonAncestorContainer,
@@ -215,10 +52,12 @@ function highlightSelectedText(range: Range) {
     }
   }
 
+  // If the selection spans only one text node, wrap that node in a <span> element
   if (nodesToWrap.length === 0 && range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
     nodesToWrap.push(range.commonAncestorContainer);
   }
 
+  // Wrap each text node in a <span> element and highlight it
   nodesToWrap.forEach((node) => {
     const span = document.createElement("span");
     span.style.backgroundColor = "yellow";
@@ -229,6 +68,7 @@ function highlightSelectedText(range: Range) {
   });
 }
   
+// Function to determine if a node intersects a given range
 function isNodeIntersectingRange(node: Node, range: Range): boolean {
   const nodeRange = document.createRange();
   nodeRange.selectNodeContents(node);
@@ -238,6 +78,7 @@ function isNodeIntersectingRange(node: Node, range: Range): boolean {
   );
 }
   
+// Function to get the intersection of two ranges
 function getIntersectionRange(range1: Range, range2: Range): Range {
   const intersectionRange = range1.cloneRange();
   intersectionRange.setStart(range2.startContainer, range2.startOffset);
@@ -245,12 +86,15 @@ function getIntersectionRange(range1: Range, range2: Range): Range {
   return intersectionRange;
 }
 
+// Listener for messages from the background script containing website-specific highlights
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'websiteHighlights') {
+    // Extract the website-specific highlights from the message
     const websiteHighlights: Highlight[] = message.data;
 
     console.log("Recieved websiteHighlights: ", websiteHighlights);
 
+    // For each highlight, deserialize the range and highlight the corresponding text
     websiteHighlights.forEach(highlight => {
       const ranges = rangee.deserilaizeAtomic(highlight.serializedRange);
       console.log("deserialized range: ", ranges);
@@ -264,5 +108,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
   
+// Add a listener for mouseup events to detect text selections
 document.addEventListener("mouseup", handleTextSelection);
   

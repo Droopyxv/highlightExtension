@@ -1,95 +1,42 @@
-// interface Highlight {
-//   url: string;
-//   range: {
-//     startOffset: number;
-//     endOffset: number;
-//   };
-// }
-
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   let highlightData: any;
-//   if (message.type === 'newHighlight') {
-//     highlightData = message.data;
-//     console.log("Message receieved.");
-
-//     chrome.storage.local.get(['highlights']).then((results) => {
-//       const highlights = results.highlights || [];
-//       const updatedHighlights = highlights ? [...highlights, highlightData] : [highlightData];
-//       chrome.storage.local.set({ highlights: updatedHighlights });
-//     });
-//   }
-// });
-
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (message.type === 'newHighlight') {
-//     const highlightData: Highlight = message.data;
-//     console.log("Message received.");
-
-//     chrome.storage.local.get(['highlights']).then((results) => {
-//       const highlights: Highlight[] = results.highlights || [];
-//       const updatedHighlights = [...highlights, highlightData];
-//       chrome.storage.local.set({ highlights: updatedHighlights });
-//     });
-//   }
-// });
+import {Highlight} from 'src/utils/interface.ts'
+//importing the interface highlights.
 
 
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//   if (changeInfo.status === 'complete' && tab.active) {
-//     const websiteUrl = tab.url;
-
-//     chrome.storage.local.get(['highlights'], (result) => {
-//       const highlights: Highlight[] = result.highlights || [];
-//       const websiteHighlights = highlights.filter((highlight: Highlight) => highlight.url === websiteUrl);
-
-//       // send filtered highlights back to content script on active tab
-//       chrome.tabs.sendMessage(tabId, { type: 'websiteHighlights', data: websiteHighlights });
-//     })
-//   }
-// });
-
-// interface SerializedRange {
-//   startContainerPath: string | null;
-//   startOffset: number;
-//   endContainerPath: string | null;
-//   endOffset: number;
-// }
-
-interface Highlight {
-  url: string;
-  serializedRange: string;
-}
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'newHighlight') {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => { //adds listener to chrome runtime object.
+  if (message.type === 'newHighlight') { //when a call from the extension with the name newHighlight is called the code below is run.
     const highlightData: Highlight = message.data;
-    //console.log("Message received.");
+    //initializes a variable names highlightData that is an object of the highlight interface with the data recieved from the runtime listener.
 
     chrome.storage.local.get(['highlights'], (result) => {
       const highlights: Highlight[] = result.highlights || [];
       const updatedHighlights = [...highlights, highlightData];
       chrome.storage.local.set({ highlights: updatedHighlights }, () => {
-        //console.log('Highlights stored in local storage.');
-        //console.log(updatedHighlights);
+
       });
     });
+
+    //reads chrome local storage to see if there are any highlights previously made. if there are previous highlights, they are added on before the new highlights. if there are no preivous highlights, highlights is set to an empty array.
   }
 });
 
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.active) {
-    const websiteUrl = tab.url;
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {  //adds a listener to watch for updates in the chrome tab.
+  if (changeInfo.status === 'complete' && tab.active) { //when the tab is active and returns the status complete the code below is ran.
+    const websiteUrl = tab.url;  //sets the variable website url equal to the current tabs url.
 
     console.log("made it into a new tab");
 
+
+    // Retrieve highlights from local storage
     chrome.storage.local.get(['highlights'], (result) => {
+      // Extract the highlights array from the result, or use an empty array if it doesn't exist
       const highlights: Highlight[] = result.highlights || [];
+       // Filter the highlights array to only include highlights for the current website
       const websiteHighlights = highlights.filter((highlight: Highlight) => highlight.url === websiteUrl);
 
       console.log(websiteHighlights);
 
-      // send filtered highlights back to content script on active tab
+      // Send a message to the content script in the active tab with the filtered highlights
       chrome.tabs.sendMessage(tabId, { type: 'websiteHighlights', data: websiteHighlights });
     });
   }
