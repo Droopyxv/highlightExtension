@@ -1,13 +1,17 @@
-interface SerializedRange {
-  startContainerPath: string | null;
-  startOffset: number;
-  endContainerPath: string | null;
-  endOffset: number;
-}
+import { Rangee } from 'rangee';
+
+const rangee = new Rangee({ document });
+
+// interface SerializedRange {
+//   startContainerPath: string | null;
+//   startOffset: number;
+//   endContainerPath: string | null;
+//   endOffset: number;
+// }
 
 interface Highlight {
   url: string;
-  serializedRange: SerializedRange;
+  serializedRange: string;
 }
 
 // function serializeRange(range: Range): SerializedRange {
@@ -21,29 +25,29 @@ interface Highlight {
 //   };
 // }
 
-function serializeRange(range: Range): SerializedRange {
-  const serializedRange: SerializedRange = {
-    startContainerPath: getXPath(range.startContainer),
-    startOffset: range.startOffset,
-    endContainerPath: getXPath(range.endContainer),
-    endOffset: range.endOffset
-  };
-  return serializedRange;
-}
+// function serializeRange(range: Range): SerializedRange {
+//   const serializedRange: SerializedRange = {
+//     startContainerPath: getXPath(range.startContainer),
+//     startOffset: range.startOffset,
+//     endContainerPath: getXPath(range.endContainer),
+//     endOffset: range.endOffset
+//   };
+//   return serializedRange;
+// }
 
-function deserializeRange(serializedRange: SerializedRange): Range | null {
-  const startNode = getNodeByXPath(serializedRange.startContainerPath || '');
-  const endNode = getNodeByXPath(serializedRange.endContainerPath || '');
+// function deserializeRange(serializedRange: SerializedRange): Range | null {
+//   const startNode = getNodeByXPath(serializedRange.startContainerPath || '');
+//   const endNode = getNodeByXPath(serializedRange.endContainerPath || '');
 
-  if (startNode && endNode) {
-    const range = document.createRange();
-    range.setStart(startNode, serializedRange.startOffset);
-    range.setEnd(endNode, serializedRange.endOffset);
-    return range;
-  }
+//   if (startNode && endNode) {
+//     const range = document.createRange();
+//     range.setStart(startNode, serializedRange.startOffset);
+//     range.setEnd(endNode, serializedRange.endOffset);
+//     return range;
+//   }
 
-  return null;
-}
+//   return null;
+// }
 
 // function getXPath(node: Node): string | null {
 //   const parts: string[] = [];
@@ -72,36 +76,36 @@ function deserializeRange(serializedRange: SerializedRange): Range | null {
 //   return parts.length > 0 ? '/' + parts.join('/') : null;
 // }
 
-function getXPath(node: Node): string | null {
-  if (node instanceof Text) {
-    const parent = node.parentNode;
-    if (parent) {
-      const siblings = Array.from(parent.childNodes);
-      const index = siblings.findIndex((sibling) => sibling === node);
-      return getXPath(parent) + `/text()[${index + 1}]`;
-    }
-  } else if (node instanceof Element) {
-    const parent = node.parentNode;
-    if (parent) {
-      const siblings = Array.from(parent.childNodes);
-      const index = siblings.findIndex((sibling) => sibling === node);
-      return getXPath(parent) + `/*[${index + 1}]`;
-    }
-  }
+// function getXPath(node: Node): string | null {
+//   if (node instanceof Text) {
+//     const parent = node.parentNode;
+//     if (parent) {
+//       const siblings = Array.from(parent.childNodes);
+//       const index = siblings.findIndex((sibling) => sibling === node);
+//       return getXPath(parent) + `/text()[${index + 1}]`;
+//     }
+//   } else if (node instanceof Element) {
+//     const parent = node.parentNode;
+//     if (parent) {
+//       const siblings = Array.from(parent.childNodes);
+//       const index = siblings.findIndex((sibling) => sibling === node);
+//       return getXPath(parent) + `/*[${index + 1}]`;
+//     }
+//   }
 
-  return null; // Return null for unsupported node types
-}
+//   return null; // Return null for unsupported node types
+// }
 
 
-function getNodeByXPath(xpath: string): Node | null {
-  try {
-    const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-    return result.singleNodeValue;
-  } catch (error) {
-    console.error('Invalid XPath:', xpath);
-    return null;
-  }
-}
+// function getNodeByXPath(xpath: string): Node | null {
+//   try {
+//     const result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+//     return result.singleNodeValue;
+//   } catch (error) {
+//     console.error('Invalid XPath:', xpath);
+//     return null;
+//   }
+// }
 
 
 
@@ -115,7 +119,7 @@ function handleTextSelection() {
     console.log("Website URL:", websiteUrl);
     console.log("Range selected: ", range);
 
-    const serRange = serializeRange(range);
+    const serRange = rangee.serializeAtomic(range);
 
     const newHighlight: Highlight = {
       url: websiteUrl,
@@ -248,10 +252,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Recieved websiteHighlights: ", websiteHighlights);
 
     websiteHighlights.forEach(highlight => {
-      const range = deserializeRange(highlight.serializedRange);
-      console.log("deserialized range: ", range);
-      if (range) {
-        highlightSelectedText(range);
+      const ranges = rangee.deserilaizeAtomic(highlight.serializedRange);
+      console.log("deserialized range: ", ranges);
+      if (ranges) {
+        ranges.forEach(range => {
+          highlightSelectedText(range);
+        });
+        //highlightSelectedText(range);
       }
     });
   }

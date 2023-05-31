@@ -48,16 +48,16 @@
 //   }
 // });
 
-interface SerializedRange {
-  startContainerPath: string | null;
-  startOffset: number;
-  endContainerPath: string | null;
-  endOffset: number;
-}
+// interface SerializedRange {
+//   startContainerPath: string | null;
+//   startOffset: number;
+//   endContainerPath: string | null;
+//   endOffset: number;
+// }
 
 interface Highlight {
   url: string;
-  serializedRange: SerializedRange;
+  serializedRange: string;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
